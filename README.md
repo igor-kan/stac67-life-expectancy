@@ -3,6 +3,15 @@
 > **Course:** STAC67H3 — Regression Analysis (Fall 2026)  
 > **Institution:** Department of Computer & Mathematical Sciences, University of Toronto Scarborough  
 > **Topic:** Determinants of Global Life Expectancy via Multiple Linear Regression & Diagnostic Modeling  
+> **Project Team:** Debmita Majumdar, Elena Osipyan, Igor Zakhidov  
+
+---
+
+## 👥 Project Team
+
+- **Debmita Majumdar**
+- **Elena Osipyan**
+- **Igor Zakhidov**
 
 ---
 
@@ -26,7 +35,7 @@ stac67-life-expectancy/
 │   │   └── life_expectancy_2014.csv    # Raw cross-sectional WHO 2014 dataset (183 countries, 21 variables)
 │   └── processed/                      # Cleaned, imputed, or transformed datasets
 ├── notebooks/
-│   └── stac67_life_expectancy_case_study.Rmd  # Master R Markdown analysis and modeling report
+│   └── stac67_life_expectancy.Rmd      # Starter R Markdown analysis template
 ├── src/
 │   └── load_data.R                     # Data ingestion and variable type casting utilities
 ├── figures/                            # High-resolution plots (residual diagnostics, leverage plots)
@@ -107,9 +116,9 @@ Rscript packages.R
 ```
 
 ### Running the Analysis
-Open `notebooks/stac67_life_expectancy_case_study.Rmd` inside RStudio and click **Knit** (to PDF or HTML), or render via command line:
+Open `notebooks/stac67_life_expectancy.Rmd` inside RStudio and click **Knit** (to PDF or HTML), or render via command line:
 ```bash
-Rscript -e "rmarkdown::render('notebooks/stac67_life_expectancy_case_study.Rmd')"
+Rscript -e "rmarkdown::render('notebooks/stac67_life_expectancy.Rmd')"
 ```
 
 ---
