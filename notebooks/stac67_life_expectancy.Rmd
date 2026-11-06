@@ -1,9 +1,6 @@
 ---
 title: "STAC67 Final Case Study: Global Life Expectancy Analysis"
-author:
-  - "Debmita Majumdar"
-  - "Elena Osipyan"
-  - "Igor Zakhidov"
+author: "STAC67 Project Team"
 date: "`r Sys.Date()`"
 output:
   pdf_document: default

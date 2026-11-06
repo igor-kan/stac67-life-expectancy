@@ -3,15 +3,6 @@
 > **Course:** STAC67H3 — Regression Analysis (Fall 2026)  
 > **Institution:** Department of Computer & Mathematical Sciences, University of Toronto Scarborough  
 > **Topic:** Determinants of Global Life Expectancy via Multiple Linear Regression & Diagnostic Modeling  
-> **Project Team:** Debmita Majumdar, Elena Osipyan, Igor Zakhidov  
-
----
-
-## 👥 Project Team
-
-- **Debmita Majumdar**
-- **Elena Osipyan**
-- **Igor Zakhidov**
 
 ---
 
