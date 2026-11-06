@@ -1,0 +1,91 @@
+---
+title: "STAC67 Final Project: Global Life Expectancy Multiple Regression Analysis"
+author: "STAC67 Project Team"
+date: "`r Sys.Date()`"
+output:
+  pdf_document:
+    toc: true
+    number_sections: true
+  html_document:
+    toc: true
+    toc_float: true
+    theme: cosmo
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = TRUE,
+  warning = FALSE,
+  message = FALSE,
+  fig.width = 8,
+  fig.height = 5,
+  fig.align = "center"
+)
+
+# Core libraries
+library(tidyverse)
+library(car)
+library(leaps)
+library(corrplot)
+library(broom)
+library(knitr)
+```
+
+# Introduction & Research Objective
+
+## Background & Question
+<!-- Describe the epidemiological context and formulate the primary scientific question -->
+
+## Dataset Overview & Variables
+<!-- Overview of life_expectancy_2014.csv (WHO Global Health Observatory) -->
+
+# Targeted Descriptive Analysis (EDA)
+
+## Data Inspection & Missingness Audit
+```{r load-data}
+# Load dataset
+# df <- read.csv("../data/raw/life_expectancy_2014.csv")
+```
+
+## Univariate & Bivariate Distributions
+<!-- Histograms, density plots, scatterplots, correlation matrix -->
+
+# Multiple Linear Regression Formulation
+
+## Initial Full Model Specification
+<!-- Formulate theoretical model based on Preston Curve and epidemiological literature -->
+
+## Transformation & Interaction Hypotheses
+<!-- Log transformations (e.g. log(gdp)), interactions (e.g. status * schooling) -->
+
+# Model Selection
+
+## Best Subset, Forward/Backward Stepwise (AIC/BIC)
+<!-- Criteria comparison: Adjusted R^2, AIC, BIC, Mallows' Cp -->
+
+## Selected Parsimonious Model
+<!-- Justification and summary of the selected model -->
+
+# Model Diagnostics & Validation
+
+## LINE Assumptions Check
+<!-- Linearity, Independence, Normality (Q-Q plot, Shapiro-Wilk), Equal Variance (Breusch-Pagan, residual plot) -->
+
+## Multicollinearity & Variance Inflation Factors (VIF)
+<!-- Check for severe collinearity among predictors -->
+
+## Outliers, High Leverage & Influential Points
+<!-- Hat values (leverage), Studentized/RStudent residuals, Cook's Distance, DFFITS -->
+
+## Remedial Measures & Refinement
+<!-- Transformations, robust regression, or sensitivity analysis if needed -->
+
+# Interpretation, Limitations & Conclusion
+
+## Quantitative Interpretation of Coefficients
+<!-- Contextual economic and public health interpretation -->
+
+## Causal Limitations & Observational Constraints
+<!-- Discussion of omitted variables, ecological fallacy, and policy implications -->
+
+# References
