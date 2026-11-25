@@ -1,0 +1,312 @@
+---
+# title: "STAC67 Life Expectancy Project: Checkpoint 1"
+# author: "Debmita Majumdar, Elena Osipyan, Nethanel Reta, Igor Zakhidov"
+# date: "November 13, 2026"
+geometry: "margin=0.4in"
+fontsize: 9pt
+output:
+  pdf_document:
+    toc: false
+    number_sections: false
+    df_print: "default"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE, fig.pos = "!htbp")
+
+library(tidyverse)
+library(knitr)
+library(gridExtra)
+```
+# STAC67 Life Expectancy Project: Checkpoint 1
+Debmita Majumdar, Elena Osipyan, Nethanel Reta, Igor Zakhidov
+November 13, 2026
+
+## Research question
+To what extent does immunization coverage (polio, diphtheria) and adult mortality explain cross-country variation in life expectancy, and does the relationship differ between developed and developing countries?
+
+**Data.** 183 countries in 2014, from the Kaggle dataset "Life Expectancy (WHO)" [1], compiled from WHO Global Health Observatory and United Nations data.
+
+## Exploratory Data Analysis
+```{r data-intro, include=FALSE}
+df <- read.csv("life_expectancy_2014.csv")
+
+developed <- subset(df, status == "Developed")
+developing <- subset(df, status == "Developing")
+
+# Check the number of countries in each group
+nrow(developed)
+nrow(developing)
+
+# Check the variables
+names(df)
+```
+
+```{r eda-plots, fig.width=13, fig.height=3, fig.cap="Life expectancy against each baseline predictor. Each panel shows one predictor; coloured lines are least-squares fits within each development group (dark cyan: developed, orange: developing; shaded bands: 95\\% confidence intervals) and the dashed black line is the fit across all 183 countries."}
+df$status <- factor(df$status, levels = c("Developed", "Developing"))
+cols <- c("Developed" = "darkcyan", "Developing" = "orange")
+
+plot_polio <- ggplot(df, aes(x = polio, y = life_expectancy)) +
+  geom_point(aes(color = status)) +
+  geom_smooth(method = "lm", se = FALSE, color = "black", linetype = "dashed") +
+  geom_smooth(aes(color = status, fill = status), method = "lm", se = TRUE) +
+  scale_color_manual(values = cols) +
+  scale_fill_manual(values = cols) +
+  labs(x = "Polio immunization (% of 1-year-olds)", y = "Life expectancy (years)") +
+  theme_minimal() +
+  theme(legend.position = "none")
+
+plot_dip <- ggplot(df, aes(x = diphtheria, y = life_expectancy)) +
+  geom_point(aes(color = status)) +
+  geom_smooth(method = "lm", se = FALSE, color = "black", linetype = "dashed") +
+  geom_smooth(aes(color = status, fill = status), method = "lm", se = TRUE) +
+  scale_color_manual(values = cols) +
+  scale_fill_manual(values = cols) +
+  labs(x = "Diphtheria immunization (% of 1-year-olds)", y = "Life expectancy (years)") +
+  theme_minimal() +
+  theme(legend.position = "none")
+
+plot_adult <- ggplot(df, aes(x = adult_mortality, y = life_expectancy)) +
+  geom_point(aes(color = status)) +
+  geom_smooth(method = "lm", se = FALSE, color = "black", linetype = "dashed") +
+  geom_smooth(aes(color = status, fill = status), method = "lm", se = TRUE) +
+  scale_color_manual(values = cols) +
+  scale_fill_manual(values = cols) +
+  labs(x = "Adult mortality (per 1,000 aged 15-60)", y = "Life expectancy (years)") +
+  theme_minimal() +
+  theme(legend.position = "none")
+
+grid.arrange(plot_polio, plot_dip, plot_adult, ncol = 3)
+```
+
+```{r eda-summary}
+cor_tbl <- df %>%
+  group_by(status) %>%
+  summarise(
+    n = n(),
+    Polio = cor(polio, life_expectancy),
+    Diphtheria = cor(diphtheria, life_expectancy),
+    Adult_Mortality = cor(adult_mortality, life_expectancy)
+  )
+
+kable(
+  cor_tbl,
+  digits = 3,
+  col.names = c("Status", "n", "Polio", "Diphtheria", "Adult Mortality"),
+  caption = "Sample sizes and correlations with life expectancy by development status"
+)
+```
+
+Life expectancy ranges from 48.1 to 89.0 years across the 183 countries (mean 71.5). Developed countries average 81.1 years (n = 32), about 11.6 years more than developing countries (69.5 years, n = 151). Figure 1 and Table 1 show that immunization coverage is positively correlated with life expectancy only among developing countries ($r = 0.403$ for polio, $0.361$ for diphtheria), while the developed-country lines are nearly flat. Adult mortality is negatively correlated with life expectancy in both groups ($r = -0.559$ developed, $-0.739$ developing).
+
+### Development Status Comparison
+
+```{r bivariate-by-status}
+polio_dev <- lm(life_expectancy ~ polio, data = developed)
+polio_deving <- lm(life_expectancy ~ polio, data = developing)
+dip_dev <- lm(life_expectancy ~ diphtheria, data = developed)
+dip_deving <- lm(life_expectancy ~ diphtheria, data = developing)
+mort_dev <- lm(life_expectancy ~ adult_mortality, data = developed)
+mort_deving <- lm(life_expectancy ~ adult_mortality, data = developing)
+
+biv_tbl <- data.frame(
+  Predictor = c("Polio", "Diphtheria", "Adult Mortality"),
+  Slope_Dev = c(coef(polio_dev)[2], coef(dip_dev)[2], coef(mort_dev)[2]),
+  Slope_Deving = c(coef(polio_deving)[2], coef(dip_deving)[2], coef(mort_deving)[2]),
+  R2_Dev = c(summary(polio_dev)$r.squared, summary(dip_dev)$r.squared, summary(mort_dev)$r.squared),
+  R2_Deving = c(summary(polio_deving)$r.squared, summary(dip_deving)$r.squared, summary(mort_deving)$r.squared)
+)
+
+kable(
+  biv_tbl,
+  digits = 4,
+  col.names = c("Predictor", "Slope (Developed)", "Slope (Developing)",
+                "R2 (Developed)", "R2 (Developing)"),
+  caption = "Simple regressions of life expectancy on each predictor, fitted separately by development status"
+)
+```
+
+Fitting each predictor on its own within each group (Table 2), immunization coverage is essentially unrelated to life expectancy in developed countries: polio and diphtheria each explain less than 0.01% of the variation, with slopes near 0. In developing countries, each additional percentage point of coverage is associated with 0.147 (polio) and 0.118 (diphtheria) more years of life expectancy, explaining 16.2% and 13.0% of the variation. Adult mortality has similar negative slopes in both groups (-0.060 developed, -0.053 developing) and explains more of the variation in each (31.2% and 54.6%). These bivariate fits suggest the immunization slopes differ by development status while the adult mortality slope does not, but they do not adjust for the other predictors and do not imply causation.
+
+### Data Quality and Missing Values
+
+```{r data-quality, include=FALSE}
+# Check missing values
+variables <- c(
+  "life_expectancy",
+  "polio",
+  "diphtheria",
+  "adult_mortality",
+  "status"
+)
+
+colSums(is.na(df[variables]))
+
+# summary statistics
+summary(df[variables])
+
+# 5 countries with the lowest polio coverage
+head(df[order(df$polio), c("country", "status", "polio")], 5)
+
+# 5 countries with the lowest diphtheria coverage
+head(df[order(df$diphtheria), c("country", "status", "diphtheria")], 5)
+
+# 5 countries with the highest and lowest adult mortality
+head(df[order(-df$adult_mortality), c("country", "status", "adult_mortality")], 5)
+head(df[order(df$adult_mortality), c("country", "status", "adult_mortality")], 5)
+```
+
+All 183 countries have complete records for life expectancy, polio, diphtheria, adult mortality and development status. A few developing countries have extreme values, such as polio coverage as low as 8%, diphtheria coverage as low as 2%, and an adult mortality rate of 522 per 1,000 in Lesotho. These are plausible for low-income settings, so we kept them. At the other end, adult mortality values as low as 1 per 1,000 (Barbados) are implausible for ages 15-60 and reflect known inaccuracies in the original Kaggle data.^[Corrected versions of the dataset re-collect the mortality variables from WHO sources; see L. Gochiashvili, *Life Expectancy (WHO) Fixed*, Kaggle, https://www.kaggle.com/datasets/lashagoch/life-expectancy-who-updated.] We kept these values for now; they reappear as large negative residuals in the first regression model.
+
+## First Proper Multiple Linear Regression and Residual Analysis
+
+```{r mlr-model}
+# reuse dataset and set Developing as baseline
+m1_data <- df
+m1_data$status <- relevel(m1_data$status, ref = "Developing")
+
+# fit baseline model and compute intervals and multicollinearity checks
+m1 <- lm(life_expectancy ~ polio + diphtheria + adult_mortality, data = m1_data)
+mort_ci <- round(confint(m1)["adult_mortality", ], 3)
+vifs <- round(car::vif(m1), 2)
+
+kable(summary(m1)$coefficients, digits = 3, caption = "First linear regression model (n = 183)")
+```
+
+Polio, diphtheria, and adult mortality explain about 60% of the cross-country variation in life expectancy (adjusted $R^2$ = 0.593, $F$ = 89.36, $p < 0.001$). Adult mortality is the dominant predictor. Each additional death per 1,000 adults is associated with about 0.057 fewer years of life expectancy, or about 5.7 years per 100. The 95% CI is `r mort_ci[1]` to `r mort_ci[2]`, holding immunization constant. Diphtheria coverage is only marginally significant ($p$ = 0.064). Polio coverage is not significant ($p$ = 0.604), and VIF values stay low (polio `r vifs[1]`, diphtheria `r vifs[2]`, adult mortality `r vifs[3]`).
+
+```{r mlr-diagnostics, fig.width=12, fig.height=4, fig.cap="Residual diagnostic plots and Q-Q plot for m1."}
+# save residuals and fitted values
+m1_data$obs_order <- seq_len(nrow(m1_data))
+m1_data$fitted <- fitted(m1)
+m1_data$resid <- resid(m1)
+m1_data$std_resid <- rstandard(m1)
+
+# residual diagnostic plots
+plot_fit <- ggplot(m1_data, aes(x = fitted, y = resid)) +
+  geom_point(alpha = 0.7) +
+  geom_hline(yintercept = 0, linetype = "dashed") +
+  geom_smooth(method = "loess", se = FALSE) +
+  labs(title = "Residuals vs. Fitted", x = "Fitted life expectancy (years)", y = "Residuals")
+
+plot_polio_r <- ggplot(m1_data, aes(x = polio, y = resid)) +
+  geom_point(alpha = 0.7) +
+  geom_hline(yintercept = 0, linetype = "dashed") +
+  geom_smooth(method = "loess", se = FALSE) +
+  labs(title = "Residuals vs. Polio", x = "Polio immunization (% of 1-year-olds)", y = "Residuals")
+
+plot_dip_r <- ggplot(m1_data, aes(x = diphtheria, y = resid)) +
+  geom_point(alpha = 0.7) +
+  geom_hline(yintercept = 0, linetype = "dashed") +
+  geom_smooth(method = "loess", se = FALSE) +
+  labs(title = "Residuals vs. Diphtheria", x = "Diphtheria immunization (% of 1-year-olds)", y = "Residuals")
+
+plot_mort_r <- ggplot(m1_data, aes(x = adult_mortality, y = resid)) +
+  geom_point(alpha = 0.7) +
+  geom_hline(yintercept = 0, linetype = "dashed") +
+  geom_smooth(method = "loess", se = FALSE) +
+  labs(title = "Residuals vs. Adult Mortality", x = "Adult mortality (per 1,000)", y = "Residuals")
+
+plot_qq <- ggplot(m1_data, aes(sample = std_resid)) +
+  stat_qq() +
+  stat_qq_line() +
+  labs(title = "Normal Q-Q Plot", x = "Theoretical quantiles", y = "Sample quantiles")
+
+grid.arrange(plot_fit, plot_polio_r, plot_dip_r, plot_mort_r, plot_qq, ncol = 3)
+
+# check Box-Cox transformation and Shapiro-Wilk test
+pt_m1 <- car::powerTransform(m1)
+opt_lam <- round(unname(pt_m1$lambda), 2)
+ci_rng <- round(confint(pt_m1)[1, ], 2)
+sw_m1 <- shapiro.test(m1_data$resid)
+```
+
+Residuals vs fitted: The trend line stays close to 0 for most of the range. It bends downward above about 77 years, where a cluster of countries has large negative residuals (down to -20). Polio and diphtheria: The relationship looks flat across most of the range. The handful of countries with very low coverage (under 20% of 1-year-olds) all have positive residuals, which pulls the trend line up on the left. Those are only a few points, so the evidence of curvature is weak. Adult mortality: The trend is slightly curved. The largest negative residuals sit at very low adult mortality, close to 0-50 per 1000 people.
+
+From Box-Cox, the optimal lambda is `r opt_lam`, with a 95% CI from `r ci_rng[1]` to `r ci_rng[2]`. Because lambda = 1 falls inside the interval, no transformation of life expectancy is needed. For the Q-Q plot, the middle of the distribution follows the line well. The lower tail falls well below it, with standardized residuals down to about -4.4, and the upper tail drifts slightly above it. That pattern means the residuals are left-skewed and heavy-tailed, driven by countries whose life expectancy is much lower than predicted. Shapiro-Wilk gives W = `r round(sw_m1$statistic, 3)`, p = `r signif(sw_m1$p.value, 2)`, so normality is rejected. With n = 183, the CLT makes the coefficient tests and CIs fairly robust to this. Still, this points to a violation in normality.
+
+The assumption of equal variance is roughly satisfied, with mild heteroscedasticity at the high end. In the residuals vs. fitted plot (Figure 2), the vertical spread is fairly even for fitted values between about 50 and 75 years, but widens above about 75, where several countries have large negative residuals. The residual plots against the predictors show the same pattern: the spread is widest at high immunization coverage (above about 80%) and at low adult mortality, which are the countries predicted to have the highest life expectancy. This is likely because developed and high-performing developing countries are mixed together at the top end of the fitted range.
+
+```{r mlr-residuals, fig.width=12, fig.height=2, fig.cap="Observation order and development status residual plots for m1."}
+# plot order and status residuals
+plot_order <- ggplot(m1_data, aes(x = obs_order, y = resid)) +
+  geom_segment(aes(xend = obs_order, yend = 0)) +
+  geom_point(size = 0.5) +
+  geom_hline(yintercept = 0, linetype = "dashed") +
+  labs(title = "Residuals vs. Observation Order", x = "Observation (country order)", y = "Residuals")
+
+plot_status <- ggplot(m1_data, aes(x = status, y = resid)) +
+  geom_boxplot(width = 0.5) +
+  geom_hline(yintercept = 0, linetype = "dashed") +
+  labs(title = "Residuals by Development Status", x = "Development status", y = "Residuals")
+
+grid.arrange(plot_order, plot_status, ncol = 2)
+```
+
+Independence is satisfied with respect to observation order, but not with respect to development status. For residuals compared to observation order, there's no trend, cycle or run pattern, which is what is expected for independent countries. The residuals versus status plot shows an issue. Developed countries have a median residual of about +4, and nearly all of their residuals are positive. That means the model systematically underpredicts their life expectancy. Developing countries are centered near 0, with a long negative tail. Residuals that differ by group point to an omitted variable. Development status carries information the model doesn't capture.
+
+We identify the group bias in the residuals of the first linear regression model and test our research question, by fitting an additive model with development status (`m2_add`) and an interaction model allowing for the predictor slope to variation by status (`m2_int`).
+
+```{r status-followup}
+# fit additive and interaction models
+m2_add <- lm(life_expectancy ~ polio + diphtheria + adult_mortality + status, data = m1_data)
+m2_int <- lm(life_expectancy ~ (polio + diphtheria + adult_mortality) * status, data = m1_data)
+aov_seq <- anova(m1, m2_add, m2_int)
+
+status_est <- round(coef(m2_add)["statusDeveloped"], 2)
+status_ci <- round(confint(m2_add)["statusDeveloped", ], 2)
+
+# additive and interaction model comparison table
+seq_tbl <- data.frame(
+  Model = c(
+    "m1",
+    "m2_add",
+    "m2_int"
+  ),
+  Adj_R2 = c(
+    summary(m1)$adj.r.squared,
+    summary(m2_add)$adj.r.squared,
+    summary(m2_int)$adj.r.squared
+  ),
+  RSE = c(summary(m1)$sigma, summary(m2_add)$sigma, summary(m2_int)$sigma),
+  Partial_F = c("-", round(aov_seq$F[2:3], 2)),
+  p_value = c("-", format.pval(aov_seq[["Pr(>F)"]][2:3], digits = 3, eps = 0.001))
+)
+
+kable(
+  seq_tbl,
+  digits = 4,
+  col.names = c("Model", "Adj R2", "RSE", "Partial F", "p-value"),
+  caption = "ANOVA Comparison of the First, Additive, and Interaction Models"
+)
+```
+
+```{r status-plots, fig.width=6, fig.height=2.2, out.width="60%", fig.cap="Residuals by development status, without (m1) and with (m2\\_add) development status."}
+# compare residuals with and without status
+box_df <- data.frame(
+  Model = factor(
+    rep(c("m1 (w/o status)", "m2_add (w/ status)"), each = nrow(m1_data)),
+    levels = c("m1 (w/o status)", "m2_add (w/ status)")
+  ),
+  status = rep(m1_data$status, 2),
+  resid = c(resid(m1), resid(m2_add))
+)
+
+p_m2_box <- ggplot(box_df, aes(x = status, y = resid, fill = status)) +
+  geom_hline(yintercept = 0, linetype = "dashed") +
+  geom_boxplot(alpha = 0.7, width = 0.5) +
+  facet_wrap(~ Model) +
+  scale_fill_manual(values = cols) +
+  labs(title = "Residuals by Status: First vs. Additive", x = NULL, y = "Residuals") +
+  theme(legend.position = "none")
+
+p_m2_box
+```
+
+Adding development status reduces the residual standard error from 5.4620 to 4.9325 and raises adjusted $R^2$ from 0.5929 to 0.6680 (partial $F(1, 178) = 41.4$, $p < 0.0001$). Developed countries average `r status_est` years higher in life expectancy (95% CI: `r status_ci[1]` to `r status_ci[2]`) after fixing the other predictors constant. On the other hand, the slope interaction terms in the interaction model are not significant (see $F(3, 175) = 0.87$, $p = 0.46$), so development status mainly changes the intercept rather than changing the slopes, which removes the +4-year residual bias for developed countries. For the final report, we might substitute adult mortality with other predictors, e.g., GDP or schooling, since adult mortality is closely related to life expectancy calculation.
+
+## References
+
+\small
+
+[1] Rajarshi, K. (2018). *Life Expectancy (WHO)* [Data set]. Kaggle. https://www.kaggle.com/datasets/kumarajarshi/life-expectancy-who
